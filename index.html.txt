@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nick's Site</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background-color: #000;
+      color: #eee;
+    }
+    header {
+      padding: 1rem;
+      border-bottom: 1px solid #444;
+      text-align: center;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      background-color: #111;
+      border-bottom: 1px solid #333;
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+    nav h1 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    nav button {
+      background: #222;
+      color: #eee;
+      border: 1px solid #555;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 1rem;
+    }
+    .bio {
+      background: #111;
+      padding: 1rem;
+      border: 1px solid #333;
+      margin-bottom: 1rem;
+    }
+    .post {
+      background: #111;
+      border: 1px solid #333;
+      margin-bottom: 1rem;
+      padding: 1rem;
+    }
+    .post p {
+      margin: 0.5rem 0;
+    }
+    .post .meta {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .controls {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+    .comments {
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+      border-left: 2px solid #333;
+    }
+    .comments div {
+      margin-bottom: 0.3rem;
+    }
+    .filter-select {
+      margin-left: 0.5rem;
+      background: #222;
+      color: #eee;
+      border: 1px solid #444;
+      padding: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h1>Nick’s Site</h1>
+    <div>
+      <label for="filter">Filter:</label>
+      <select id="filter" class="filter-select" onchange="sortPosts()">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="liked">Most Liked</option>
+      </select>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="bio">
+      <h2>About Me</h2>
+      <p>I’m just a guy. I like to know stuff & I’m a nerd.</p>
+    </section>
+
+    <section id="posts">
+      <!-- Example post -->
+      <div class="post" data-likes="0" data-date="2025-05-03T00:00:00Z">
+        <p>This is my first post! Just testing things out.</p>
+        <p class="meta">Posted on May 3, 2025</p>
+        <div class="controls">
+          <button onclick="likePost(this)">Like (<span class="like-count">0</span>)</button>
+          <button onclick="toggleCommentBox(this)">Comment</button>
+        </div>
+        <div class="comments"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function likePost(button) {
+      const post = button.closest('.post');
+      const countSpan = button.querySelector('.like-count');
+      let count = parseInt(countSpan.textContent);
+      count++;
+      countSpan.textContent = count;
+      post.setAttribute('data-likes', count);
+    }
+
+    function toggleCommentBox(button) {
+      const post = button.closest('.post');
+      let commentInput = post.querySelector('.comment-input');
+      if (!commentInput) {
+        commentInput = document.createElement('div');
+        commentInput.classList.add('comment-input');
+        commentInput.innerHTML = `
+          <input type="text" placeholder="Write a comment..." style="width:80%; padding:4px; background:#000; color:#fff; border:1px solid #444;" />
+          <button onclick="postComment(this)" style="margin-left:5px;">Post</button>
+        `;
+        post.appendChild(commentInput);
+      } else {
+        commentInput.remove();
+      }
+    }
+
+    function postComment(button) {
+      const container = button.closest('.post');
+      const input = container.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+      const commentBox = container.querySelector('.comments');
+      const comment = document.createElement('div');
+      comment.innerHTML = `
+        ${text}
+        <button onclick="deleteComment(this)" style="margin-left:10px;">Delete</button>
+        <button onclick="replyToComment(this)">Reply</button>
+      `;
+      commentBox.appendChild(comment);
+      input.value = '';
+    }
+
+    function deleteComment(button) {
+      button.parentElement.remove();
+    }
+
+    function replyToComment(button) {
+      const comment = button.parentElement;
+      const replyInput = document.createElement('div');
+      replyInput.innerHTML = `
+        <input type="text" placeholder="Reply..." style="width:70%; padding:4px; background:#000; color:#fff; border:1px solid #444;" />
+        <button onclick="submitReply(this)">Post</button>
+      `;
+      comment.appendChild(replyInput);
+      button.disabled = true;
+    }
+
+    function submitReply(button) {
+      const replyBox = button.closest('div');
+      const input = replyBox.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+      const reply = document.createElement('div');
+      reply.style.marginLeft = '1rem';
+      reply.textContent = text;
+      replyBox.parentElement.appendChild(reply);
+      replyBox.remove();
+    }
+
+    function sortPosts() {
+      const filter = document.getElementById('filter').value;
+      const posts = Array.from(document.querySelectorAll('.post'));
+      const container = document.getElementById('posts');
+      posts.sort((a, b) => {
+        if (filter === 'liked') {
+          return parseInt(b.dataset.likes) - parseInt(a.dataset.likes);
+        } else if (filter === 'oldest') {
+          return new Date(a.dataset.date) - new Date(b.dataset.date);
+        } else {
+          return new Date(b.dataset.date) - new Date(a.dataset.date);
+        }
+      });
+      posts.forEach(p => container.appendChild(p));
+    }
+  </script>
+</body>
+</html>
